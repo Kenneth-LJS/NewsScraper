@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/Kenneth-LJS/NewsScraper#readme",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.2"
+    "jsdom": "^11.3.0",
+    "xmlhttprequest": "^1.8.0"
   }
 }
