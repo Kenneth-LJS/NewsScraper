@@ -8,9 +8,10 @@ var xhr = new XMLHttpRequest();
 
 var newsUrls = [
 	'http://www.straitstimes.com/world/united-states/las-vegas-shooting-still-no-clear-motive-say-police',
-	'https://uk.news.yahoo.com/las-vegas-strip-shooting-multiple-061006202.html'
+	'https://uk.news.yahoo.com/las-vegas-strip-shooting-multiple-061006202.html',
+	'http://prntly.com/2017/08/18/neo-japanese-imperialists-%E5%A4%A7%E6%97%A5%E6%9C%AC%E5%B8%9D%E5%9C%8B-vow-to-take-part-in-next-u-s-nazi-rally-along-side-allies/'
 ];
-var url = newsUrls[1];
+var url = newsUrls[newsUrls.length - 1];
 
 function init() { // Code starts here
 	step1();
@@ -54,6 +55,7 @@ function getArticleTitle(dom) {
 
 	var elements = document.getElementsByTagName('h1');
 
+	// find <h1> element with the biggest font size
 	var bestSize = -1;
 	var bestTitle = undefined;
 	for (var i = 0; i < elements.length; i++) {
@@ -71,18 +73,16 @@ function getArticleTextAsParagraphs(dom) {
 	var document = window.document;
 
 	var elements = document.getElementsByTagName('p');
-	var parents = [];
-	for (var i = 0; i < elements.length; i++) {
-		parents.push(elements[i].parentElement);
-	}
-	var bestCount = -1;
-	var bestItem = parents[0];
+	elements = Array.prototype.slice.call(elements);
 
-	while (parents.length > 0) {
-		var curItem = parents[0];
-		var oldLen = parents.length;
-		parents = parents.filter(x => x != curItem);
-		var newLen = parents.length;
+	var bestCount = -1;
+	var bestItem = elements[0];
+
+	while (elements.length > 0) {
+		var curItem = elements[0];
+		var oldLen = elements.length;
+		elements = elements.filter(x => x.parentElement != curItem.parentElement);
+		var newLen = elements.length;
 		var count = oldLen - newLen;
 		if (count > bestCount) {
 			bestCount = count;
@@ -90,20 +90,39 @@ function getArticleTextAsParagraphs(dom) {
 		}
 	}
 
-	var newsArticleElement = bestItem;
-	elements = newsArticleElement.getElementsByTagName('p');
+	var articleStyle = window.getComputedStyle(bestItem);
+	var articleFontSize = articleStyle.getPropertyValue('font-size');
+	var articleFontFamily = articleStyle.getPropertyValue('font-family');
+
+	elements = document.getElementsByTagName('p');
+	elements = Array.prototype.slice.call(elements);
+
+
 	var paragraphs = [];
 	for (var i = 0; i < elements.length; i++) {
-		if (elements[i].parentElement != newsArticleElement) {
+		// either the element before or the element after share the same parent
+		var hasNeighbours = (i > 0 && elements[i - 1].parentElement == elements[i].parentElement) ||
+							(i < elements.length - 1 && elements[i].parentElement == elements[i + 1].parentElement);
+		if (!hasNeighbours) {
 			continue;
 		}
-		paragraphs.push(elements[i].textContent);
+		var curStyle = window.getComputedStyle(elements[i]);
+		if (curStyle.getPropertyValue('font-size') != articleFontSize ||
+			curStyle.getPropertyValue('font-family') != articleFontFamily ||
+			elements[i].textContent.trim().length == 0) {
+			continue;
+		}
+		paragraphs.push(elements[i].textContent.trim());
 	}
 	return paragraphs;
 }
 
-function getArticleText(window) {
-	return getArticleTextAsParagraphs(window).join('\n');
+function getArticleText(dom) {
+	var paragraphs = getArticleTextAsParagraphs(dom);
+	if (paragraphs.length == 0) {
+		return '';
+	}
+	return '[' + paragraphs.join(']\n[') + ']';
 }
 
 function getFontSizeInPx(rawFontSize) {
